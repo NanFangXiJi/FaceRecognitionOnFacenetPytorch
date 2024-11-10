@@ -16,7 +16,7 @@ def read_dataset(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet: Inc
     :param mtcnn: The mtcnn model.
     :param resnet: The resnet model.
     :param dataset_path: The path to the dataset.
-    :param only_one_picture: Whether to only read one picture for generate embeddings.
+    :param only_one_picture: Whether to only read one picture for every person for generate embeddings.
     """
 
     if mtcnn.device != device:
@@ -42,6 +42,10 @@ def read_dataset(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet: Inc
 
     # possible improvement: if the images are guaranteed to be the same size, batch process is possible.
     for x, y in dataset:
+        if y == memory.NOBODY:
+            # cannot use NOBODY as a class name
+            continue
+
         if only_one_picture and y in names:
             continue
 
@@ -59,9 +63,12 @@ def read_dataset(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet: Inc
 
     class_to_idx = dict()
     class_to_features = defaultdict(list)
+    name_loc = 0
     for i, class_name in enumerate(names):
         class_to_features[class_name].append(embeddings[i])
-        class_to_idx[class_name] = i
+        if class_name not in class_to_idx:
+            class_to_idx[class_name] = name_loc
+            name_loc += 1
 
     class_features = []
     for class_name, features in class_to_features.items():
@@ -71,7 +78,7 @@ def read_dataset(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet: Inc
 
     embeddings = torch.stack(class_features)
 
-    memory.initialize(class_to_idx, embeddings)
+    memory.initialize(class_to_idx, embeddings, device)
 
 
 if __name__ == '__main__':

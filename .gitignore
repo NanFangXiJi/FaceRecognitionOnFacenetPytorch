@@ -1,4 +1,6 @@
 .idea
 data/faces_memory
+record
+test_pic
 main.py
 infer_cn.ipynb
