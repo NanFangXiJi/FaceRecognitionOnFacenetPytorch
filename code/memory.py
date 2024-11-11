@@ -37,6 +37,12 @@ class Memory:
     def get_embeddings(self, device=torch.device('cpu')):
         return self.embeddings.to(device)
 
+    def get_names(self, indices: torch.Tensor):
+        names = []
+        for elem in indices:
+            names.append(self.idx_to_class[elem.item()])
+        return names
+
     @staticmethod
     def load_memory():
         if os.path.exists(Memory.MEMORY_PATH):

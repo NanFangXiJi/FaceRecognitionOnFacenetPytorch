@@ -5,10 +5,12 @@ import torch
 import os
 
 from memory import Memory
+from process import load_image_with_exif
 
 
-def read_dataset(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet: InceptionResnetV1, dataset_path: str = '../data/faces_memory',
-                 only_one_picture: bool = False):
+def read_dataset(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet: InceptionResnetV1,
+                 dataset_path: str = '../data/faces_memory', only_one_picture: bool = False,
+                 exif_rotation: bool = False):
     """
     Read the dataset of known faces, generate their embeddings and save them in memory.
     :param memory: The memory of the program.
@@ -17,6 +19,7 @@ def read_dataset(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet: Inc
     :param resnet: The resnet model.
     :param dataset_path: The path to the dataset.
     :param only_one_picture: Whether to only read one picture for every person for generate embeddings.
+    :param exif_rotation: Whether to rotate the image with exif or not.
     """
 
     if mtcnn.device != device:
@@ -28,7 +31,10 @@ def read_dataset(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet: Inc
 
     try:
         os.makedirs(os.path.dirname(dataset_path), exist_ok=True)
-        dataset = datasets.ImageFolder(dataset_path)
+        if exif_rotation:
+            dataset = datasets.ImageFolder(dataset_path, transform=load_image_with_exif)
+        else:
+            dataset = datasets.ImageFolder(dataset_path)
     except FileNotFoundError as e:
         raise Exception(f'Read {dataset_path} failed.')
 
@@ -82,4 +88,5 @@ def read_dataset(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet: Inc
 
 
 if __name__ == '__main__':
-    read_dataset(Memory(), torch.device('cuda'), MTCNN(device=torch.device('cuda')), InceptionResnetV1(pretrained='vggface2'))
+    read_dataset(Memory(), torch.device('cuda'), MTCNN(device=torch.device('cuda')),
+                 InceptionResnetV1(pretrained='vggface2'), exif_rotation=True)

@@ -1,41 +1,12 @@
+import os.path
 from facenet_pytorch import MTCNN, InceptionResnetV1
-from concurrent.futures import ProcessPoolExecutor
-from memory import Memory
 import torch
 from PIL import Image
 from datetime import datetime
+from torch.utils.data import DataLoader
 
-
-def handle_rotate(img: Image.Image):
-    """
-    Some image may include EXIF (Exchangeable Image File Format) metadata.
-    One of the effect is the autorotation of the image, which cannot be automatically detect by the program.
-    The models used in this program is sensitive to the rotation of the images.
-    In that case, this function can read the EXIF and do the correct rotation.
-    :param img: The image to be rotated.
-    :return: The rotated image.
-    """
-    if not isinstance(img, Image.Image):
-        raise TypeError(f'Image type {type(img)} not supported.')
-
-    exif = img.getexif()
-
-    if exif is not None:
-        for tag, value in exif.items():
-            if tag == 274:
-                if value == 3:
-                    img = img.rotate(180, expand=True)
-                elif value == 6:
-                    img = img.rotate(270, expand=True)
-                elif value == 8:
-                    img = img.rotate(90, expand=True)
-    return img
-
-
-def handle_rotation_multithreading(img_list: list[Image.Image]):
-    with ProcessPoolExecutor() as executor:
-        rotated_img_list = list(executor.map(handle_rotate, img_list))
-    return rotated_img_list
+from memory import Memory
+from images_dataset import ImageDataset
 
 
 def face_recognition(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet: InceptionResnetV1, image: Image.Image,
@@ -75,12 +46,13 @@ def face_recognition(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet:
     mtcnn.keep_all = multi_face
 
     if save_detections:
-        faces = mtcnn(image, save_path=save_detections_path+datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        path = os.path.join(save_detections_path, datetime.now().strftime("%Y-%m-%d-%H-%M-%S")+'.jpg')
+        faces = mtcnn(image, save_path=path)
     else:
         faces = mtcnn(image)
 
     if faces is None:
-        return None
+        return []
 
     faces = faces.to(device)
 
@@ -93,15 +65,24 @@ def face_recognition(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet:
     min_distances, min_indices = torch.min(distances, dim=1)
     min_indices[min_distances > threshold] = -1
 
-    return min_indices
+    return memory.get_names(min_indices)
+
+
+def multi_image_recognition(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet: InceptionResnetV1,
+                            images_dataset: ImageDataset, save_detections: bool = False,
+                            save_detections_path: str = "../record/", threshold: float = 0.85):
+    dataloader = DataLoader(images_dataset, batch_size=1)
+
+
 
 
 if __name__ == '__main__':
     img = Image.open('../test_pic/windy_on_train.jpg')
-    img = handle_rotate(img)
+    from process import handle_rotation
+    img = handle_rotation(img)
     res = face_recognition(Memory.load_memory(), torch.device('cuda'), MTCNN(device=torch.device('cuda')),
                      InceptionResnetV1(pretrained='vggface2'), img,
-                     multi_face=True)
+                     multi_face=True, save_detections=True)
 
     print(res)
 
