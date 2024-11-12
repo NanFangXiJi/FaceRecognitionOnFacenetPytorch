@@ -1,5 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor
 from PIL import Image, ImageOps
+import os
 
 
 def handle_rotation(img: Image.Image):
@@ -32,3 +33,21 @@ def load_image(file_path: str, rotation: bool = False):
     if rotation:
         img = handle_rotation(img)
     return img
+
+
+def resize_images(input_folder, output_folder, size, rotation=False):
+    os.makedirs(output_folder, exist_ok=True)
+
+    for filename in os.listdir(input_folder):
+        if filename.endswith(('jpg', 'jpeg', 'png')):
+            img_path = os.path.join(input_folder, filename)
+            img = load_image(img_path, rotation=rotation)
+
+            img_resized = img.resize(size, Image.LANCZOS)
+
+            output_path = os.path.join(output_folder, filename)
+            img_resized.save(output_path)
+
+
+def current_folder():
+    return os.path.dirname(os.path.abspath(__file__))

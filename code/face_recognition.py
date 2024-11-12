@@ -7,10 +7,12 @@ from torch.utils.data import DataLoader
 
 from memory import Memory
 from images_dataset import ImageDataset
+from process import current_folder
 
 
 def face_recognition(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet: InceptionResnetV1, image: Image.Image,
-                     multi_face: bool = False, save_detections: bool = False, save_detections_path: str = "../record/",
+                     multi_face: bool = False, save_detections: bool = False,
+                     save_detections_path: str = os.path.join(current_folder(), "../record/"),
                      threshold: float = 0.85):
     """
     Recognize the faces in an image.
@@ -68,21 +70,58 @@ def face_recognition(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet:
     return memory.get_names(min_indices)
 
 
-def multi_image_recognition(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet: InceptionResnetV1,
+def multi_faces_recognition(memory: Memory, device: torch.device, mtcnn: MTCNN, resnet: InceptionResnetV1,
                             images_dataset: ImageDataset, save_detections: bool = False,
-                            save_detections_path: str = "../record/", threshold: float = 0.85):
-    dataloader = DataLoader(images_dataset, batch_size=1)
+                            save_detections_path: str = os.path.join(current_folder(), "../record/"),
+                            threshold: float = 0.85):
+    if not memory.is_initialized():
+        raise Exception('Memory is not initialized.')
+
+    if mtcnn.device != device:
+        raise Exception("The device is different than the mtcnn device.")
+    dataloader = DataLoader(images_dataset, batch_size=16, collate_fn=collate_fn)
+
+    mtcnn = mtcnn.eval()
+    resnet = resnet.eval().to(device)
+
+    mtcnn.keep_all = False
+
+    all_names = []
+    all_classes = []
+
+    for images, names in dataloader:
+        if save_detections:
+            path = [os.path.join(save_detections_path, datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + f'{name}.jpg')
+                    for name in names]
+            faces = mtcnn(images, save_path=path)
+        else:
+            faces = mtcnn(images)
+
+        faces = torch.stack(faces, dim=0).to(device)
+
+        embeddings = resnet(faces)
+        distances = torch.cdist(embeddings, memory.get_embeddings(device), p=2)
+        min_distances, min_indices = torch.min(distances, dim=1)
+        min_indices[min_distances > threshold] = -1
+        all_names.extend(names)
+        all_classes.extend(memory.get_names(min_indices))
+
+    return all_names, all_classes
 
 
+def collate_fn(batch):
+    images = [item[0] for item in batch]
+    filenames = [item[1] for item in batch]
+    return images, filenames
 
 
 if __name__ == '__main__':
-    img = Image.open('../test_pic/windy_on_train.jpg')
+    img = Image.open(os.path.join(current_folder(), '../test_pic/windy_on_train.jpg'))
     from process import handle_rotation
     img = handle_rotation(img)
     res = face_recognition(Memory.load_memory(), torch.device('cuda'), MTCNN(device=torch.device('cuda')),
                      InceptionResnetV1(pretrained='vggface2'), img,
-                     multi_face=True, save_detections=True)
+                     multi_face=False, save_detections=False)
 
     print(res)
 

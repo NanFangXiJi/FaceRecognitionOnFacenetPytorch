@@ -1,9 +1,11 @@
 import os
 import torch
 
+from process import current_folder
+
 
 class Memory:
-    MEMORY_PATH = '../data/faces_memory.mpt'
+    MEMORY_PATH = os.path.join(current_folder(), '../data/faces_memory.mpt')
     NOBODY = 'Nobody'
 
     def __init__(self):

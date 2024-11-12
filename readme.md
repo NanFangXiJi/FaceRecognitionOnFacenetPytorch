@@ -4,7 +4,7 @@
 
 ## Supported image format
 Support to detect faces in images. 
-Supported format includes `jpg`, `png`, `jpeg`, `bmp`. 
+Supported format includes `jpg`, `png`, `jpeg`. 
 Support on other format is not guaranteed.
 
 ---
@@ -18,6 +18,7 @@ python code/main.py [command]
 ```
 
 For the `[command]`, it is explained below.
+Details can be found by `-h | --help`.
 
 ### **Initialize the dataset.** 
 This program needs to preprocess the dataset of the known faces.
@@ -87,3 +88,33 @@ The `filepath` is necessary.
 `-th | --threshold threshold` gives the threshold of the embeddings' distances. 
 When two embeddings have lower distance than threshold, they are possibly considered to be the same person.
 Otherwise, they are considered 'NOBODY'.
+
+This variable have a great impact on the result. Default value is recommended. 
+Reasonable value comes 0.6~0.9.
+
+### **Recognize all images in a directory**
+***Attention!*** We don't support detect more than one faces in one image in this mode.
+
+```
+rec_all filepath [-ss | --same-size] [-r | --rotation] [-sf | --save-faces [filepath]] [-c | --cpu] [-th | --threshold threshold]
+```
+
+`-ss | --same-size` means that all your images are the same size and there must be at least one face in each picture. 
+It's highly recommended if you can be assured that your images sharing same size.
+In this case, your faces recognition would be much quicker.
+
+### **Resize all images in a directory**
+
+```
+resize height width input_dir output_dir [-r | --rotation]
+```
+
+If your image have analogous length-width ratio, you may want to resize them to be the same, 
+so that you can use `-ss` in `rec_all`. This is what the `resize` for.
+
+`resize` will change all images in `input_dir` to designated size `height width` and save them in `output_dir`.
+
+If you process the pictures with `-r | --rotation`, 
+you don't need to rotate images again when you run `rec` or `rec_all`.
+
+Be careful, resize might lead to the failure from cannot detect faces successfully.

@@ -2,5 +2,7 @@
 data/faces_memory
 record
 test_pic
+test_pic_resize
 main.py
 infer_cn.ipynb
+test.py
