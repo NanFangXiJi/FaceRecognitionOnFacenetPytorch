@@ -1,39 +1,35 @@
 # Face Recognition On FaceNet-Pytorch
 
+简体中文(Simplified Chinese)文档已提供，请点击[中文readme](readme_zh.md)。
+
 ---
 
-## Supported image format
-Support to detect faces in images. 
-Supported format includes `jpg`, `png`, `jpeg`. 
-Support on other format is not guaranteed.
+## Supported Image Formats
+Supports face detection in images.  
+Supported formats include JPG, PNG, and JPEG.  
+Support for other formats is not guaranteed.
 
 ---
 
 ## Guidance
-Run the `main.py` to start the program.
-
-Overall structure is
-```
-python code/main.py [command]
-```
+Run `python code/main.py [command]` to start the program.
 
 For the `[command]`, it is explained below.
 Details can be found by `-h | --help`.
 
-### **Initialize the dataset.** 
-This program needs to preprocess the dataset of the known faces.
-The embedding of each face, as well as other status will
-be saved in the file `data/faces_memory.mpt`. The command
-to initialize is
+### **Initialize the Dataset**  
+This program preprocesses the dataset of known faces. 
+The embedding of each face, along with other status information, 
+will be saved in the file `data/faces_memory.mpt`. 
+The command to initialize is:
 ```
 init [-f | --filepath filepath] [-r | --rotation] [-sg | --single] [-c | --cpu]
 ```
-`filepath` is the directory path of your own images dataset.
+- `filepath` is the directory path of your own image dataset.
+- If no filepath is provided, the default directory `data/faces_memory` will be used.
 
-If no `filepath` is given, the default directory `data/faces_memory`
-is to be read.
 
-***Attention!*** The structure of the dataset directory should be like
+***Attention!*** The structure of the dataset directory should be as follows:
 ```
 filepath/
     class_1/
@@ -46,75 +42,70 @@ filepath/
         ...
     ...
 ```
-***Attention!*** No classname should be 'Nobody', 
-because this is the name we label strangers.
+***Attention!*** The classname 'Nobody' should not be used, 
+as it is reserved for labeling strangers. 
+This means that images of each person should be placed in their own directory.
 
-That means, images of one person should have their own directory.
+- `-r | --rotation` processes the rotation in EXIF metadata. 
+Some images, particularly those taken by cameras or smartphones, 
+may have EXIF metadata that saves the correct angle but as a rotated matrix. 
+This may prevent the program from detecting faces correctly. 
+Use this parameter unless you are certain there is no EXIF rotation in your images.
 
-`-r | --rotation` is process the rotation in *EXIF* metadata. 
+- `-sg | --single` selects only one image per person, 
+rather than calculating embeddings for all images and saving their average. 
+This option is suggested if some images are of low quality, 
+as they may cause significant damage to the average embedding.
 
-Sometimes there are EXIF metadata in your images, 
-particularly for those pictures taken by your camera or smartphone. They will show the correct angle in most software, 
-but it is saved as a spun matrix, which cannot be detected by our program successfully.
+- `-c | --cpu` uses the CPU for processing. If this parameter is not used, 
+the program will default to using the CPU when CUDA is not available.
 
-Use this parameter unless you are convinced that there are no EXIF rotation in your images.
+Your dataset should contain only one face per image, 
+or at least the largest face in each image should belong to the correct class.
 
-`-sg | --single` is the parameters that set the features to select only one image for each person,
-rather than calculate all embeddings of each image and save their average.
+Once you run the `init`, the embedding values will be automatically loaded for predict.
 
-It is suggested only when you believe that some of the images are low quality images, 
-which can cause severe damage to the average embedding.
+Once the dataset is initialized, face recognition is ready.
 
-`-c | --cpu` means using cpu to run. Without this parameter, the program uses cpu only when cuda is not accessible.
-
-Your dataset is expected to have only one face in each image, or at least the face for the class is the biggest face in the picture.
-
-Once you run the `init`, the embeddings value will be automatically loaded for predict.
-
-### **Recognize the face**
-Once it is initialized, recognition is ready.
-
-For one image in a time, use this command.
+### **Face Recognition**  
+For recognizing a single image, use the following command:
 ```
 rec filepath [-m | --multi-faces] [-r | --rotation] [-sf | --save-faces [filepath]] [-c | --cpu] [-th | --threshold threshold]
 ```
 This command is designed for detect one image at a time.
-The `filepath` is necessary.
+The `filepath` is required.
 
-`-m | --multiface` means allow to detect more than one face at a time.
+- `-m | --multi-faces` allows for detecting multiple faces in one image.
 
-`-sf | --saveface [filepath]` means save all detected faces. Detected faces are saved in `record/` or the directory you give.
+- `-sf | --save-faces [filepath]` saves all detected faces. 
+Detected faces are saved in the `record/` directory or the directory you specify.
 
-`-th | --threshold threshold` gives the threshold of the embeddings' distances. 
-When two embeddings have lower distance than threshold, they are possibly considered to be the same person.
-Otherwise, they are considered 'NOBODY'.
+- `-th | --threshold threshold` sets the threshold for comparing embeddings' distances. 
+When the distance between two embeddings is lower than the threshold, 
+they are considered to be the same person. 
+Otherwise, they are labeled as 'NOBODY'. 
+The default value is recommended, with reasonable values typically ranging from 0.6 to 0.9.
 
-This variable have a great impact on the result. Default value is recommended. 
-Reasonable value comes 0.6~0.9.
-
-### **Recognize all images in a directory**
-***Attention!*** We don't support detect more than one faces in one image in this mode.
+### **Recognize All Images in a Directory**
+***Attention!*** This mode does not support detecting multiple faces in one image.
 
 ```
 rec_all filepath [-ss | --same-size] [-r | --rotation] [-sf | --save-faces [filepath]] [-c | --cpu] [-th | --threshold threshold]
 ```
 
-`-ss | --same-size` means that all your images are the same size and there must be at least one face in each picture. 
-It's highly recommended if you can be assured that your images sharing same size.
-In this case, your faces recognition would be much quicker.
+- `-ss | --same-size` means all your images are the same size and must contain at least one human face. 
+This is recommended if you are sure that all images meet these requirements, as it will speed up face recognition.
 
-### **Resize all images in a directory**
+### **Resize All Images in a Directory**
 
 ```
 resize height width input_dir output_dir [-r | --rotation]
 ```
 
-If your image have analogous length-width ratio, you may want to resize them to be the same, 
-so that you can use `-ss` in `rec_all`. This is what the `resize` for.
+If your images have a similar aspect ratio, you may want to resize them to a consistent size, so you can use `-ss` in `rec_all`. 
+This command resizes all images in `input_dir` to the specified dimensions (`height` and `width`) and saves them in `output_dir`.
 
-`resize` will change all images in `input_dir` to designated size `height width` and save them in `output_dir`.
+If you process the images with `-r | --rotation`, 
+there will be no need to rotate them again when you run `rec` or `rec_all`.
 
-If you process the pictures with `-r | --rotation`, 
-you don't need to rotate images again when you run `rec` or `rec_all`.
-
-Be careful, resize might lead to the failure from cannot detect faces successfully.
+Be careful, resizing might result in failure to detect faces successfully.
