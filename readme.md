@@ -3,7 +3,7 @@
 简体中文(Simplified Chinese)文档已提供，请点击[中文readme](readme_zh.md)。
 
 ---
-## Package Installment
+## Package Installation
 ### Pillow
 ```
 pip install Pillow
