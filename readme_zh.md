@@ -3,6 +3,28 @@
 To read English version readme, click [readme](readme.md).
 
 ---
+## 软件包安装
+
+### Pillow
+```
+pip install Pillow
+```
+
+### Torch 和 Torchvision
+你可以在 [官方网页](https://pytorch.org/get-started/locally/) 找到安装说明。
+
+选择正确的操作系统、Python版本和CUDA版（如果没有CUDA或GPU，可以选择CPU版本）。
+然后，使用网页上提供的命令进行安装。
+
+### FaceNet-Pytorch
+```
+pip install facenet_pytorch
+# 注意，有时使用该命令会自动将你已安装的torch以及torchvision替换为其他版本。
+```
+作为替代，你可以从 [他们的仓库](https://github.com/timesler/facenet-pytorch/releases) 下载。
+
+
+---
 
 ## 支持的图片格式
 支持在图像中进行人脸检测。  

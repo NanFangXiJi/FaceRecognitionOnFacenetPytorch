@@ -3,6 +3,25 @@
 简体中文(Simplified Chinese)文档已提供，请点击[中文readme](readme_zh.md)。
 
 ---
+## Package Installment
+### Pillow
+```
+pip install Pillow
+```
+### Torch and Torchvision
+You can find the installation instructions on their [official website](https://pytorch.org/get-started/locally/).
+
+Select the correct operating system, Python version, and CUDA version (or choose the CPU version if you do not have CUDA or a GPU).
+Then, use the command provided on the website to install the packages.
+
+### FaceNet-Pytorch
+```
+pip install facenet_pytorch
+# Pay attention, sometimes it might replace your Torch and Torchvision with their version altomatically.
+```
+Alternatively, you can download it from [their repository](https://github.com/timesler/facenet-pytorch/releases).
+
+---
 
 ## Supported Image Formats
 Supports face detection in images.  
